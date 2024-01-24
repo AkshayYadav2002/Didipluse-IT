@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hierarchical Node Management</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    #node-container {
+      position: relative;
+      height: 400px;
+      margin-top: 20px;
+    }
+    .node {
+      position: absolute;
+      border: 1px solid #333;
+      padding: 10px;
+      background-color: #fff;
+      border-radius: 5px;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+    #form-container {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="form-container">
+  <h2>Node Form</h2>
+  <form id="node-form">
+    <label for="node-type">Node Type:</label>
+    <select id="node-type" name="node-type" onchange="handleNodeTypeChange()">
+      <option value="single">Single Node</option>
+      <option value="child">Child Node</option>
+      <option value="parent">Parent Node</option>
+    </select>
+
+    <label for="node-name">Node Name:</label>
+    <input type="text" id="node-name" name="node-name" required>
+
+    <label for="selected-node">Parent Node:</label>
+    <input type="text" id="selected-node" name="selected-node" readonly disabled>
+
+    <button type="button" onclick="addOrUpdateNode()">Add/Update Node</button>
+    <button type="button" onclick="deleteNode()">Delete Node</button>
+  </form>
+</div>
+
+<div id="node-container">
+  <canvas id="canvas"></canvas>
+  <h2>Current Nodes</h2>
+  <!-- Hierarchical nodes will be displayed here -->
+</div>
+
+<script>
+  var nodes = {};
+
+  function addOrUpdateNode() {
+    var nodeType = document.getElementById('node-type').value;
+    var nodeName = document.getElementById('node-name').value;
+    var parentNode = document.getElementById('selected-node').value;
+
+    if (nodeType === 'single' || (nodeType === 'child' && parentNode)) {
+       
+      nodes[nodeName] = { type: nodeType, parent: parentNode };
+    } else if (nodeType === 'parent') {
+       
+      nodes[nodeName] = { type: nodeType };
+    }
+
+    renderNodes();
+  }
+
+  function deleteNode() {
+    var nodeName = document.getElementById('node-name').value;
+    delete nodes[nodeName];
+    renderNodes();
+  }
+
+  function handleNodeTypeChange() {
+    var nodeType = document.getElementById('node-type').value;
+    var selectedNodeInput = document.getElementById('selected-node');
+    selectedNodeInput.disabled = nodeType !== 'child';
+    selectedNodeInput.value = ''; // Clear value when changing node type
+  }
+
+  function renderNodes() {
+    var nodeContainer = document.getElementById('node-container');
+    var canvas = document.getElementById('canvas');
+    var ctx = canvas.getContext('2d');
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+     
+    while (nodeContainer.firstChild) {
+      nodeContainer.removeChild(nodeContainer.firstChild);
+    }
+
+    for (var nodeName in nodes) {
+      if (nodes.hasOwnProperty(nodeName)) {
+        var node = nodes[nodeName];
+        var nodeElement = document.createElement('div');
+        nodeElement.className = 'node';
+        nodeElement.setAttribute('node-name', nodeName);  
+        nodeElement.innerHTML = `<strong>${node.type}:</strong> ${nodeName}<br><em>${node.parent || ''}</em>`;
+        nodeElement.style.left = Math.random() * 250 + 'px';
+        nodeElement.style.top = Math.random() * 250 + 'px';
+
+        
+        nodeElement.addEventListener('click', function() {
+          document.getElementById('selected-node').value = this.getAttribute('node-name');
+        });
+
+        nodeContainer.appendChild(nodeElement);
+
+        
+        if (node.parent && nodes[node.parent]) {
+          var parentElement = document.querySelector(`[node-name="${node.parent}"]`);
+          if (parentElement) {
+            var x1 = parseFloat(parentElement.style.left) + 50;  
+            var y1 = parseFloat(parentElement.style.top) + 25; 
+            var x2 = parseFloat(nodeElement.style.left) + 50;  
+            var y2 = parseFloat(nodeElement.style.top) + 25;  
+
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+          }
+        }
+      }
+    }
+  }
+</script>
+
+</body>
+</html>
